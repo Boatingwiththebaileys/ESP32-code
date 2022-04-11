@@ -124,8 +124,8 @@ void setup() {
          ->connect_to(new SKOutputFloat("propulsion.main.revolutions", config_path_skpath));  
           // connect the output of Frequency() to a Signal K Output as a number
 
-  sensor->connect_to(new Frequency(60))
-  // times by 60 to go from Hz to RPM
+  sensor->connect_to(new Frequency(6))
+  // times by 6 to go from Hz to RPM
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
           ->connect_to(new SKOutputFloat("propulsion.engine.fuelconsumption", "/Engine Fuel/sk_path"));                                       
 
