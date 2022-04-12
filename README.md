@@ -5,7 +5,7 @@ The setup is using examples found on the excellent SensESP pages here - https://
 
 I now have engine temperature, exhaust temp, engine RPM, engine room environmental and engine runtime using the ESP uptime.
 
-I'm currently testing (estimated) fuel consumption which is using the engine RPM and fuel burn info from the Volvo Penta documents. 
+I'm currently testing (estimated) fuel consumption which is using the engine RPM and fuel burn info from the Volvo Penta documents. (NOW WORKING)
 
 I plan to add a bilge alarm to detect any water ingress.
 
