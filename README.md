@@ -7,8 +7,8 @@ I now have engine temperature, exhaust temp, engine RPM, engine room environment
 
 Please make sure you add the following additional dependencies to you platformio.ini file, located under 'lib_deps', also check the latest version of these dependencies (Thanks Techstyle). I've uploaded my file as reference.
 
-  SensESP/OneWire@^2.0.0
-  adafruit/Adafruit BMP280 Library @ ^2.5.0
+SensESP/OneWire@^2.0.0
+adafruit/Adafruit BMP280 Library @ ^2.5.0
 
 I plan to add a bilge alarm to detect any water ingress.
 
