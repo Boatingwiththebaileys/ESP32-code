@@ -5,13 +5,8 @@ The setup is using examples found on the excellent SensESP pages here - https://
 
 I now have engine temperature, exhaust temp, engine RPM, engine room environmental, engine runtime using the ESP uptime and I've just added (estimated) fuel consumption which is using the engine RPM and fuel burn info from the Volvo Penta documents.
 
-Please make sure you add the following additional dependencies to you platformio.ini file, located under 'lib_deps', also check the latest version of these dependencies (Thanks Techstyle). It should look something like this:
+Please make sure you add the following additional dependencies to you platformio.ini file, located under 'lib_deps', also check the latest version of these dependencies (Thanks Techstyle). I've uploaded my file as reference.
 
-lib_deps =
-  ; Peg the SensESP version to 2.0.0 and compatible versions
-  SignalK/SensESP @ ^2.0.0
-  
-  ; Add any additional dependencies here
   SensESP/OneWire@^2.0.0
   adafruit/Adafruit BMP280 Library @ ^2.5.0
 
