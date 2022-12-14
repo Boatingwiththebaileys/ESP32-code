@@ -70,7 +70,6 @@ class FuelInterpreter : public CurveInterpolator {
   }
 };
 
-
 reactesp::ReactESP app;
 
   Adafruit_BMP280 bmp280;
@@ -111,7 +110,6 @@ void setup() {
 
  //RPM Application/////
 
-
   const char* config_path_calibrate = "/Engine RPM/calibrate";
   const char* config_path_skpath = "/Engine RPM/sk_path";
   const float multiplier = 1.0;
@@ -126,6 +124,7 @@ void setup() {
 
   sensor->connect_to(new Frequency(6))
   // times by 6 to go from Hz to RPM
+          ->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
           ->connect_to(new SKOutputFloat("propulsion.engine.fuelconsumption", "/Engine Fuel/sk_path"));                                       
 
@@ -161,6 +160,24 @@ analog_input->connect_to(new AnalogVoltage())
       ->connect_to(new TemperatureInterpreter("/Engine Temp/curve"))
       ->connect_to(new Linear(1.0, 0.0, "/Engine Temp/calibrate"))
       ->connect_to(new SKOutputFloat("propulsion.engine.temperature", "/Engine Temp/sk_path"));
+ 
+ //// Bilge Monitor /////
+
+auto* bilge = new DigitalInputState(25, INPUT_PULLUP, 5000);
+
+auto int_to_bool_function = [](int input) ->bool {
+     if (input == 1) {
+       return true;
+     } 
+     else { // input == 0
+       return false;
+     }
+};
+
+auto int_to_bool_transform = new LambdaTransform<int, bool>(int_to_bool_function);
+
+bilge->connect_to(int_to_bool_transform)
+      ->connect_to(new SKOutputBool("propulsion.engine.bilge"));
 
 
   // Start networking, SK server connections and other SensESP internals
