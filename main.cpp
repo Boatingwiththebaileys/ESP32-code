@@ -3,12 +3,9 @@
 #include <Adafruit_BMP280.h>
 #include <Wire.h>
 
-
 #include "sensesp_onewire/onewire_temperature.h"
 
-
 #include <Arduino.h>
-
 
 #include "sensesp/sensors/analog_input.h"
 #include "sensesp/sensors/digital_input.h"
@@ -17,11 +14,11 @@
 #include "sensesp/system/lambda_consumer.h"
 #include "sensesp_app_builder.h"
 #include "sensesp/transforms/linear.h"
+#include "sensesp/transforms/moving_average.h"
 #include "sensesp/transforms/analogvoltage.h"
 #include "sensesp/transforms/curveinterpolator.h"
 #include "sensesp/transforms/voltagedivider.h"
 #include "sensesp/sensors/digital_input.h"
-#include "sensesp/transforms/frequency.h"
 
 
 using namespace sensesp;
