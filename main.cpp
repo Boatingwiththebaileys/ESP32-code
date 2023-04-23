@@ -114,7 +114,7 @@ void setup() {
 
   sensor->connect_to(new Frequency(multiplier, config_path_calibrate))  
   // connect the output of sensor to the input of Frequency()
-          >connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"))
+         ->connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"))
          ->connect_to(new SKOutputFloat("propulsion.main.revolutions", config_path_skpath));  
           // connect the output of Frequency() to a Signal K Output as a number
 
