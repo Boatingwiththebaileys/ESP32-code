@@ -1,4 +1,6 @@
 // SenESP Engine Sensors
+//Code - June 2023
+//Change - Updated fuel used l/m info to fuel rate to Cubic m per second
 
 #include <Adafruit_BMP280.h>
 #include <Wire.h>
@@ -19,10 +21,10 @@
 #include "sensesp/transforms/curveinterpolator.h"
 #include "sensesp/transforms/voltagedivider.h"
 #include "sensesp/sensors/digital_input.h"
+#include "sensesp/transforms/frequency.h"
 
 
 using namespace sensesp;
-
 
 class TemperatureInterpreter : public CurveInterpolator {
  public:
@@ -49,22 +51,22 @@ class FuelInterpreter : public CurveInterpolator {
  public:
   FuelInterpreter(String config_path = "")
       : CurveInterpolator(NULL, config_path) {
-    // Populate a lookup table to translate RPM to LPH
+    // Populate a lookup table to translate RPM to m3/s
     clear_samples();
-    // addSample(CurveInterpolator::Sample(RPM, LPH));
-    add_sample(CurveInterpolator::Sample(500, 0.4));
-    add_sample(CurveInterpolator::Sample(1000, 0.7));
-    add_sample(CurveInterpolator::Sample(1500, 1.1));
-    add_sample(CurveInterpolator::Sample(1800, 1.5));
-    add_sample(CurveInterpolator::Sample(2000, 1.9));
-    add_sample(CurveInterpolator::Sample(2200, 2.4));
-    add_sample(CurveInterpolator::Sample(2400, 2.85));
-    add_sample(CurveInterpolator::Sample(2600, 3.5));
-    add_sample(CurveInterpolator::Sample(2800, 4.45));
-    add_sample(CurveInterpolator::Sample(3000, 5.5));
-    add_sample(CurveInterpolator::Sample(3200, 6.6));
-    add_sample(CurveInterpolator::Sample(3400, 7.2));
-    add_sample(CurveInterpolator::Sample(3800, 7.4));  
+    // addSample(CurveInterpolator::Sample(RPM, m3/s));
+    add_sample(CurveInterpolator::Sample(500, 0.00000011));
+    add_sample(CurveInterpolator::Sample(1000, 0.00000019));
+    add_sample(CurveInterpolator::Sample(1500, 0.0000003));
+    add_sample(CurveInterpolator::Sample(1800, 0.00000041));
+    add_sample(CurveInterpolator::Sample(2000, 0.00000052));
+    add_sample(CurveInterpolator::Sample(2200, 0.00000066));
+    add_sample(CurveInterpolator::Sample(2400, 0.00000079));
+    add_sample(CurveInterpolator::Sample(2600, 0.00000097));
+    add_sample(CurveInterpolator::Sample(2800, 0.00000124));
+    add_sample(CurveInterpolator::Sample(3000, 0.00000153));
+    add_sample(CurveInterpolator::Sample(3200, 0.00000183));
+    add_sample(CurveInterpolator::Sample(3400, 0.000002));
+    add_sample(CurveInterpolator::Sample(3800, 0.00000205));  
   }
 };
 
@@ -91,7 +93,9 @@ void setup() {
                     //->set_wifi("My WiFi SSID", "my_wifi_password")
                     //->set_sk_server("192.168.10.3", 80)
                     ->enable_uptime_sensor()
+                    // ->enable_ota("raspberry")
                     ->get_app();
+
 
 /// 1-Wire Temp Sensors - Exhaust Temp Sensors ///
 
@@ -99,10 +103,23 @@ void setup() {
 
   auto* exhaust_temp =
       new OneWireTemperature(dts, 1000, "/Exhaust Temperature/oneWire");
- 
-  exhaust_temp->connect_to(new Linear(1.0, 0.0, "/Exhaust Temperature/linear"))
-      ->connect_to(new SKOutputFloat("propulsion.main.exhaustTemperature","/Exhaust Temperature/sk_path"));
 
+  exhaust_temp->connect_to(new Linear(1.0, 0.0, "/Exhaust Temperature/linear"))
+      ->connect_to(
+          new SKOutputFloat("propulsion.engine.exhaustTemperature",
+                             "/Exhaust Temperature/sk_path"));
+
+/// 1-Wire Temp Sensors - Oil Temp Sensors ///
+
+  DallasTemperatureSensors* dts = new DallasTemperatureSensors(16);
+
+  auto* oil_temp =
+      new OneWireTemperature(dts, 1000, "/Oil Temperature/oneWire");
+
+  oil_temp->connect_to(new Linear(1.0, 0.0, "/Oil Temperature/linear"))
+      ->connect_to(
+          new SKOutputFloat("propulsion.engine.oilTemperature",
+                             "/Oil Temperature/sk_path"));
 
  //RPM Application/////
 
@@ -115,14 +132,14 @@ void setup() {
   sensor->connect_to(new Frequency(multiplier, config_path_calibrate))  
   // connect the output of sensor to the input of Frequency()
          ->connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"))
-         ->connect_to(new SKOutputFloat("propulsion.main.revolutions", config_path_skpath));  
+         ->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));  
           // connect the output of Frequency() to a Signal K Output as a number
 
   sensor->connect_to(new Frequency(6))
   // times by 6 to go from Hz to RPM
           ->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
-          ->connect_to(new SKOutputFloat("propulsion.engine.fuelconsumption", "/Engine Fuel/sk_path"));                                       
+          ->connect_to(new SKOutputFloat("propulsion.engine.fuel.rate", "/Engine Fuel/sk_path"));                                       
 
 /// BMP280 SENSOR CODE - Engine Room Temp Sensor ////  
 
@@ -142,11 +159,12 @@ void setup() {
 
   // Send the temperature to the Signal K server as a Float
   engine_room_temp->connect_to(new SKOutputFloat("propulsion.engineRoom.temperature"));
+
   engine_room_pressure->connect_to(new SKOutputFloat("propulsion.engineRoom.pressure"));
 
 //// Engine Temp Config ////
 
-const float Vin = 3.3;
+const float Vin = 3.5;
 const float R1 = 120.0;
 auto* analog_input = new AnalogInput(36, 2000);
 
@@ -156,8 +174,12 @@ analog_input->connect_to(new AnalogVoltage(Vin, Vin))
       ->connect_to(new Linear(1.0, 0.9, "/Engine Temp/calibrate"))
       ->connect_to(new MovingAverage(4, 1.0,"/Engine Temp/movingAVG"))
       ->connect_to(new SKOutputFloat("propulsion.engine.temperature", "/Engine Temp/sk_path"));
- 
- //// Bilge Monitor /////
+
+analog_input->connect_to(new AnalogVoltage(Vin, Vin))
+      ->connect_to(new VoltageDividerR2(R1, Vin, "/Engine Temp/sender"))
+      ->connect_to(new SKOutputFloat("propulsion.engine.temperature.raw"));
+
+//// Bilge Monitor /////
 
 auto* bilge = new DigitalInputState(25, INPUT_PULLUP, 5000);
 
@@ -176,7 +198,6 @@ bilge->connect_to(int_to_string_transform)
       ->connect_to(new SKOutputString("propulsion.engine.bilge"));
 
 bilge->connect_to(new SKOutputString("propulsion.engine.bilge.raw"));
-
 
   // Start networking, SK server connections and other SensESP internals
   sensesp_app->start();
