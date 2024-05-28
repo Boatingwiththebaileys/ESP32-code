@@ -5,7 +5,7 @@ The setup is using examples found on the excellent SensESP pages here - https://
 
 I now have engine temperature, exhaust temp, engine RPM, engine room environmental, engine runtime using the ESP uptime and (estimated) fuel consumption which is using the engine RPM and fuel burn info from the Volvo Penta documents. I have recently added a bilge monitor to this project.
 
-Please make sure you add the following additional dependencies to you platformio.ini file, located under 'lib_deps', also check the latest version of these dependencies (Thanks Techstyle). I've uploaded my file as reference.
+Please make sure you add the following additional dependencies to your platformio.ini file, located under 'lib_deps', also check the latest version of these dependencies (Thanks Techstyle). I've uploaded my file as a reference.
 
 SensESP/OneWire@^2.0.0 
 
