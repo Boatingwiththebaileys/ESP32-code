@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "sensesp/sensors/analog_input.h"
-#include "sensesp/sensors/digital_input.h"
 #include "sensesp/sensors/sensor.h"
 #include "sensesp/signalk/signalk_output.h"
 #include "sensesp/system/lambda_consumer.h"
