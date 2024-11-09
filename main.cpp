@@ -96,29 +96,24 @@ void setup() {
                     ->get_app();
 
 
-/// 1-Wire Temp Sensors - Exhaust Temp Sensors ///
+/// 1-Wire Temp Sensors - Exhaust Temp & Oil Temp Sensors ///
 
   DallasTemperatureSensors* dts = new DallasTemperatureSensors(17);
 
+//exhaust
   auto* exhaust_temp =
       new OneWireTemperature(dts, 1000, "/Exhaust Temperature/oneWire");
-
-  exhaust_temp->connect_to(new Linear(1.0, 0.0, "/Exhaust Temperature/linear"))
-      ->connect_to(
-          new SKOutputFloat("propulsion.engine.exhaustTemperature",
-                             "/Exhaust Temperature/sk_path"));
-
-/// 1-Wire Temp Sensors - Oil Temp Sensors ///
-
-  DallasTemperatureSensors* dts = new DallasTemperatureSensors(16);
-
+//oil config (remove if not required, can also be copied for more sensors)
   auto* oil_temp =
       new OneWireTemperature(dts, 1000, "/Oil Temperature/oneWire");
-
-  oil_temp->connect_to(new Linear(1.0, 0.0, "/Oil Temperature/linear"))
+//exhaust
+  exhaust_temp->connect_to(new Linear(1.0, 0.0, "/Exhaust Temperature/linear"))
       ->connect_to(
-          new SKOutputFloat("propulsion.engine.oilTemperature",
-                             "/Oil Temperature/sk_path"));
+          new SKOutputFloat("propulsion.engine.1.exhaustTemperature","/Exhaust Temperature/sk_path"));
+ //oil (remove if not required, can also be copied for more sensors)
+ oil_temp->connect_to(new Linear(1.0, 0.0, "/Oil Temperature/linear"))
+      ->connect_to(
+          new SKOutputFloat("propulsion.engine.1.oilTemperature","/Oil Temperature/sk_path"));
 
  //RPM Application/////
 
