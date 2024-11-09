@@ -1,5 +1,5 @@
 # ESP32-code
-Here is the code I'm running on my ESP32 as of Summer 2024
+Here is the code I'm running on my ESP32 as of Summer 2024 (This is based on V2 of SensESP)
 
 The setup is using examples found on the excellent SensESP pages here - https://github.com/SignalK/SensESP 
 
