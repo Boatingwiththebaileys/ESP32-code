@@ -17,7 +17,7 @@ The RPM curve in main.cpp (RPMInterpreter) is calibrated to MY engine, alternato
 
 1. Flash the code and watch the propulsion.engine.revolutions.raw value in Signal K - this is the raw pulse frequency (Hz) from your sender.
 2. Run the engine at a few steady speeds (e.g. idle, 1000, 1500, 2000, 2500, 3000 & max) and note the raw Hz against the RPM on a tacho you trust.
-3. In the SensESP web page go to Configuration > /Engine RPM/curve and enter each point - Input is the raw Hz, Output is the RPM divided by 60 (Signal K uses revolutions per second, so 2000 rpm = 33.333).
+3. In the SensESP web page go to Configuration > /Engine RPM/curve and enter each point - Input is the raw Hz, Output is the RPM straight off your gauge. The code converts it to revolutions per second for Signal K for you.
 4. Add a final point well above your max RPM, otherwise readings past the last point will show as 9999.
 
 Once saved in the web page your curve overrides the values in the code. The fuel rate uses this calibrated RPM, so get the RPM right first.

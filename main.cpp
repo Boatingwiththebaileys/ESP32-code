@@ -74,20 +74,20 @@ class RPMInterpreter : public CurveInterpolator {
   RPMInterpreter(String config_path = "")
       : CurveInterpolator(NULL, config_path) {
     // Populate a lookup table to translate raw pulse Hz from the sender
-    // to engine revolutions in Hz (rev/s, Signal K units). rpm = Hz * 60
+    // to engine RPM, so it can be calibrated against an RPM gauge.
     // Measured against the boat tacho, Oct 2026. Points above 2000rpm are
     // extrapolated from the 1500-2000rpm slope until measured.
     set_input_title("Raw pulse Hz");
-    set_output_title("Engine rev/s (RPM / 60)");
+    set_output_title("Engine RPM");
     clear_samples();
-    // addSample(CurveInterpolator::Sample(rawHz, engineRevsHz));
+    // addSample(CurveInterpolator::Sample(rawHz, RPM));
     add_sample(CurveInterpolator::Sample(0, 0));
-    add_sample(CurveInterpolator::Sample(195.86, 14.167));  // 850rpm
-    add_sample(CurveInterpolator::Sample(233.84, 16.667));  // 1000rpm
-    add_sample(CurveInterpolator::Sample(284.36, 25.0));    // 1500rpm
-    add_sample(CurveInterpolator::Sample(338.94, 33.333));  // 2000rpm
-    add_sample(CurveInterpolator::Sample(557.3, 66.667));   // 4000rpm (extrapolated)
-    add_sample(CurveInterpolator::Sample(1000, 133.33));    // cap, stops 9999 output
+    add_sample(CurveInterpolator::Sample(195.86, 850));
+    add_sample(CurveInterpolator::Sample(233.84, 1000));
+    add_sample(CurveInterpolator::Sample(284.36, 1500));
+    add_sample(CurveInterpolator::Sample(338.94, 2000));
+    add_sample(CurveInterpolator::Sample(557.3, 4000));   // extrapolated
+    add_sample(CurveInterpolator::Sample(1000, 8000));    // cap, stops 9999 output
   }
 };
 
@@ -149,15 +149,15 @@ void setup() {
   // raw Hz to Signal K, used to build the RPM calibration curve
   raw_hz->connect_to(new SKOutputFloat("propulsion.engine.revolutions.raw"));
 
-  // calibrated engine revolutions (Hz = rev/s)
-  auto* engine_revs = raw_hz->connect_to(new RPMInterpreter("/Engine RPM/curve"))
+  // calibrated engine RPM
+  auto* engine_rpm = raw_hz->connect_to(new RPMInterpreter("/Engine RPM/curve"))
          ->connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"));
 
-  engine_revs->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));
+  engine_rpm->connect_to(new Linear(1.0 / 60.0, 0.0))
+  // divide by 60 to go from RPM to rev/s (Hz), the Signal K unit
+          ->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));
 
-  engine_revs->connect_to(new Linear(60.0, 0.0))
-  // times by 60 to go from rev/s to RPM
-          ->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
+  engine_rpm->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
           ->connect_to(new SKOutputFloat("propulsion.engine.fuel.rate", "/Engine Fuel/sk_path"));
 
