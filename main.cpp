@@ -1,5 +1,5 @@
 // SenESP Engine Sensors
-//Code - June 2023
+//Code - October 2026
 //Change - Updated fuel used l/m info to fuel rate to Cubic m per second
 
 #include <Adafruit_BMP280.h>
@@ -69,6 +69,26 @@ class FuelInterpreter : public CurveInterpolator {
   }
 };
 
+class RPMInterpreter : public CurveInterpolator {
+ public:
+  RPMInterpreter(String config_path = "")
+      : CurveInterpolator(NULL, config_path) {
+    // Populate a lookup table to translate raw pulse Hz from the sender
+    // to engine revolutions in Hz (rev/s, Signal K units). rpm = Hz * 60
+    // Measured against the boat tacho, Oct 2026. Points above 2000rpm are
+    // extrapolated from the 1500-2000rpm slope until measured.
+    clear_samples();
+    // addSample(CurveInterpolator::Sample(rawHz, engineRevsHz));
+    add_sample(CurveInterpolator::Sample(0, 0));
+    add_sample(CurveInterpolator::Sample(195.86, 14.167));  // 850rpm
+    add_sample(CurveInterpolator::Sample(233.84, 16.667));  // 1000rpm
+    add_sample(CurveInterpolator::Sample(284.36, 25.0));    // 1500rpm
+    add_sample(CurveInterpolator::Sample(338.94, 33.333));  // 2000rpm
+    add_sample(CurveInterpolator::Sample(557.3, 66.667));   // 4000rpm (extrapolated)
+    add_sample(CurveInterpolator::Sample(1000, 133.33));    // cap, stops 9999 output
+  }
+};
+
 reactesp::ReactESP app;
 
   Adafruit_BMP280 bmp280;
@@ -89,7 +109,7 @@ void setup() {
                     ->set_hostname("SensESP")
                     // Optionally, hard-code the WiFi and Signal K server
                     // settings. This is normally not needed.
-                    //->set_wifi("My WiFi SSID", "my_wifi_password")
+                    //->set_wifi("SSID", "password")
                     //->set_sk_server("192.168.10.3", 80)
                     ->enable_uptime_sensor()
                     // ->enable_ota("raspberry")
@@ -117,23 +137,27 @@ void setup() {
 
  //RPM Application/////
 
-  const char* config_path_calibrate = "/Engine RPM/calibrate";
   const char* config_path_skpath = "/Engine RPM/sk_path";
-  const float multiplier = 1.0;
 
   auto* sensor = new DigitalInputCounter(16, INPUT_PULLUP, RISING, 500);
 
-  sensor->connect_to(new Frequency(multiplier, config_path_calibrate))  
-  // connect the output of sensor to the input of Frequency()
-         ->connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"))
-         ->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));  
-          // connect the output of Frequency() to a Signal K Output as a number
+  // raw pulse frequency from the sender, in Hz
+  auto* raw_hz = sensor->connect_to(new Frequency(1.0));
 
-  sensor->connect_to(new Frequency(6))
-  // times by 6 to go from Hz to RPM
+  // raw Hz to Signal K, used to build the RPM calibration curve
+  raw_hz->connect_to(new SKOutputFloat("propulsion.engine.revolutions.raw"));
+
+  // calibrated engine revolutions (Hz = rev/s)
+  auto* engine_revs = raw_hz->connect_to(new RPMInterpreter("/Engine RPM/curve"))
+         ->connect_to(new MovingAverage(2, 1.0,"/Engine RPM/movingAVG"));
+
+  engine_revs->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));
+
+  engine_revs->connect_to(new Linear(60.0, 0.0))
+  // times by 60 to go from rev/s to RPM
           ->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
-          ->connect_to(new SKOutputFloat("propulsion.engine.fuel.rate", "/Engine Fuel/sk_path"));                                       
+          ->connect_to(new SKOutputFloat("propulsion.engine.fuel.rate", "/Engine Fuel/sk_path"));
 
 /// BMP280 SENSOR CODE - Engine Room Temp Sensor ////  
 
@@ -192,6 +216,18 @@ bilge->connect_to(int_to_string_transform)
       ->connect_to(new SKOutputString("propulsion.engine.bilge"));
 
 bilge->connect_to(new SKOutputString("propulsion.engine.bilge.raw"));
+
+//// WiFi Fallback ////
+
+  // If the saved WiFi can't be reached within 2 minutes, open the
+  // "Configure SensESP" captive portal so new WiFi details can be entered.
+  // Runs before SensESP's own 3 minute no-WiFi restart watchdog.
+  app.onDelay(120000, []() {
+    if (WiFi.status() != WL_CONNECTED) {
+      debugW("WiFi not connected - starting config portal");
+      sensesp_app->get_networking()->activate_wifi_manager();
+    }
+  });
 
   // Start networking, SK server connections and other SensESP internals
   sensesp_app->start();
