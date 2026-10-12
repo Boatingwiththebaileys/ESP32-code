@@ -77,6 +77,8 @@ class RPMInterpreter : public CurveInterpolator {
     // to engine revolutions in Hz (rev/s, Signal K units). rpm = Hz * 60
     // Measured against the boat tacho, Oct 2026. Points above 2000rpm are
     // extrapolated from the 1500-2000rpm slope until measured.
+    set_input_title("Raw pulse Hz");
+    set_output_title("Engine rev/s (RPM / 60)");
     clear_samples();
     // addSample(CurveInterpolator::Sample(rawHz, engineRevsHz));
     add_sample(CurveInterpolator::Sample(0, 0));
