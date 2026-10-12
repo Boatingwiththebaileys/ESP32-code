@@ -15,12 +15,26 @@ adafruit/Adafruit BMP280 Library @ ^2.5.0
 
 The RPM curve in main.cpp (RPMInterpreter) is calibrated to MY engine, alternator and input circuit, so it won't be right for yours. You'll need to build your own:
 
-1. Flash the code and watch the propulsion.engine.revolutions.raw value in Signal K - this is the raw pulse frequency (Hz) from your sender.
+1. Flash the code and watch the propulsion.main.revolutionsRaw value in Signal K - this is the raw pulse frequency (Hz) from your sender.
 2. Run the engine at a few steady speeds (e.g. idle, 1000, 1500, 2000, 2500, 3000 & max) and note the raw Hz against the RPM on a tacho you trust.
 3. In the SensESP web page go to Configuration > /Engine RPM/curve and enter each point - Input is the raw Hz, Output is the RPM straight off your gauge. The code converts it to revolutions per second for Signal K for you.
 4. Add a final point well above your max RPM, otherwise readings past the last point will show as 9999.
 
 Once saved in the web page your curve overrides the values in the code. The fuel rate uses this calibrated RPM, so get the RPM right first.
+
+## Signal K paths
+
+The code uses the standard Signal K paths, so the data can be sent on to a chart plotter (e.g. with the signalk-to-nmea2000 plugin). The engine is called "main" - if yours is different (port, starboard etc.) change "main" in the paths and match it in the plugin settings.
+
+- propulsion.main.revolutions - RPM (sent in Hz, i.e. revolutions per second)
+- propulsion.main.temperature - engine temperature
+- propulsion.main.exhaustTemperature
+- propulsion.main.oilTemperature
+- propulsion.main.fuel.rate
+- environment.inside.engineRoom.temperature
+- environment.inside.engineRoom.pressure
+
+Not standard, so they won't go to the plotter: propulsion.main.revolutionsRaw (raw pulse Hz for calibrating), propulsion.main.temperatureSenderResistance (sender ohms) and environment.inside.engineRoom.bilge.
 
 ## WiFi fallback
 

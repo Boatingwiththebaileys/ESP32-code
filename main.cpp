@@ -131,11 +131,11 @@ void setup() {
 //exhaust
   exhaust_temp->connect_to(new Linear(1.0, 0.0, "/Exhaust Temperature/linear"))
       ->connect_to(
-          new SKOutputFloat("propulsion.engine.1.exhaustTemperature","/Exhaust Temperature/sk_path"));
+          new SKOutputFloat("propulsion.main.exhaustTemperature","/Exhaust Temperature/sk_path"));
  //oil (remove if not required, can also be copied for more sensors)
  oil_temp->connect_to(new Linear(1.0, 0.0, "/Oil Temperature/linear"))
       ->connect_to(
-          new SKOutputFloat("propulsion.engine.1.oilTemperature","/Oil Temperature/sk_path"));
+          new SKOutputFloat("propulsion.main.oilTemperature","/Oil Temperature/sk_path"));
 
  //RPM Application/////
 
@@ -147,7 +147,7 @@ void setup() {
   auto* raw_hz = sensor->connect_to(new Frequency(1.0));
 
   // raw Hz to Signal K, used to build the RPM calibration curve
-  raw_hz->connect_to(new SKOutputFloat("propulsion.engine.revolutions.raw"));
+  raw_hz->connect_to(new SKOutputFloat("propulsion.main.revolutionsRaw"));
 
   // calibrated engine RPM
   auto* engine_rpm = raw_hz->connect_to(new RPMInterpreter("/Engine RPM/curve"))
@@ -155,11 +155,11 @@ void setup() {
 
   engine_rpm->connect_to(new Linear(1.0 / 60.0, 0.0))
   // divide by 60 to go from RPM to rev/s (Hz), the Signal K unit
-          ->connect_to(new SKOutputFloat("propulsion.engine.revolutions", config_path_skpath));
+          ->connect_to(new SKOutputFloat("propulsion.main.revolutions", config_path_skpath));
 
   engine_rpm->connect_to(new MovingAverage(4, 1.0,"/Engine Fuel/movingAVG"))
           ->connect_to(new FuelInterpreter("/Engine Fuel/curve"))
-          ->connect_to(new SKOutputFloat("propulsion.engine.fuel.rate", "/Engine Fuel/sk_path"));
+          ->connect_to(new SKOutputFloat("propulsion.main.fuel.rate", "/Engine Fuel/sk_path"));
 
 /// BMP280 SENSOR CODE - Engine Room Temp Sensor ////  
 
@@ -178,9 +178,9 @@ void setup() {
       new RepeatSensor<float>(60000, read_pressure_callback);
 
   // Send the temperature to the Signal K server as a Float
-  engine_room_temp->connect_to(new SKOutputFloat("propulsion.engineRoom.temperature"));
+  engine_room_temp->connect_to(new SKOutputFloat("environment.inside.engineRoom.temperature"));
 
-  engine_room_pressure->connect_to(new SKOutputFloat("propulsion.engineRoom.pressure"));
+  engine_room_pressure->connect_to(new SKOutputFloat("environment.inside.engineRoom.pressure"));
 
 //// Engine Temp Config ////
 
@@ -193,11 +193,11 @@ analog_input->connect_to(new AnalogVoltage(Vin, Vin))
       ->connect_to(new TemperatureInterpreter("/Engine Temp/curve"))
       ->connect_to(new Linear(1.0, 0.9, "/Engine Temp/calibrate"))
       ->connect_to(new MovingAverage(4, 1.0,"/Engine Temp/movingAVG"))
-      ->connect_to(new SKOutputFloat("propulsion.engine.temperature", "/Engine Temp/sk_path"));
+      ->connect_to(new SKOutputFloat("propulsion.main.temperature", "/Engine Temp/sk_path"));
 
 analog_input->connect_to(new AnalogVoltage(Vin, Vin))
       ->connect_to(new VoltageDividerR2(R1, Vin, "/Engine Temp/sender"))
-      ->connect_to(new SKOutputFloat("propulsion.engine.temperature.raw"));
+      ->connect_to(new SKOutputFloat("propulsion.main.temperatureSenderResistance"));
 
 //// Bilge Monitor /////
 
@@ -215,9 +215,9 @@ auto int_to_string_function = [](int input) ->String {
 auto int_to_string_transform = new LambdaTransform<int, String>(int_to_string_function);
 
 bilge->connect_to(int_to_string_transform)
-      ->connect_to(new SKOutputString("propulsion.engine.bilge"));
+      ->connect_to(new SKOutputString("environment.inside.engineRoom.bilge"));
 
-bilge->connect_to(new SKOutputString("propulsion.engine.bilge.raw"));
+bilge->connect_to(new SKOutputString("environment.inside.engineRoom.bilgeRaw"));
 
 //// WiFi Fallback ////
 
